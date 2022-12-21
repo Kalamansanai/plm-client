@@ -1,6 +1,6 @@
 import useCHState, { encodeSelectedIds } from "companyHierarchyProvider";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Station } from "types";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -10,10 +10,14 @@ import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 
 import TabPanel from "../../TabPanel";
+import DetectorCardsGrid from "./DetectorCard";
 import LocationCardsGrid from "./LocationCard";
 
 export default function StationMenu({ station }: { station: Station }) {
-    const [tab, setTab] = useState(0);
+    const routeLocation = useLocation();
+    const type = routeLocation.pathname.split("/")[3];
+
+    const [tab, setTab] = useState(type === "detector" ? 1 : 0);
     const { state: chState } = useCHState();
     const navigate = useNavigate();
 
@@ -56,7 +60,7 @@ export default function StationMenu({ station }: { station: Station }) {
                 <LocationCardsGrid locations={locations} />
             </TabPanel>
             <TabPanel currentIndex={tab} index={1} sx={{ p: 1, flexGrow: 1 }}>
-                <div>something</div>
+                <DetectorCardsGrid locations={locations} />
             </TabPanel>
             <Divider />
             <Box>

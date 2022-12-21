@@ -1,4 +1,7 @@
 import { DetailedError } from "api";
+import DetectorPanel, {
+    loader as detectorPanelLoader,
+} from "components/_screens/dashboard/DetectorPanel";
 import deleteLocationAction from "components/_screens/dashboard/deleteLocation";
 import editLocationAction from "components/_screens/dashboard/editLocation";
 import newLocationAction from "components/_screens/dashboard/newLocation";
@@ -164,6 +167,11 @@ const router = createBrowserRouter(
                         <Route path="tasks" loader={locationTasksLoader} />
                         <Route path="send_command" action={sendCommandAction} />
                     </Route>
+                    <Route
+                        path="detector/:detector_id"
+                        loader={detectorPanelLoader}
+                        element={<DetectorPanel />}
+                    />
                 </Route>
             </Route>
         </>
