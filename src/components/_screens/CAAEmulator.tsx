@@ -29,6 +29,7 @@ async function stopDetection(setIterations: React.Dispatch<React.SetStateAction<
     } else {
         return null;
     }
+    return null;
 }
 
 export default function CAAEmulator() {
