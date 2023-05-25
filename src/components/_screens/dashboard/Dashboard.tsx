@@ -4,7 +4,14 @@ import axios from "axios";
 import { plainToClass } from "class-transformer";
 import React, { MutableRefObject, useEffect, useRef, useState } from "react";
 import { Link, Params, useLoaderData, useNavigate, useRouteLoaderData } from "react-router-dom";
-import { Location, OngoingTask, parseDetectorState, Station } from "types";
+import {
+    Location,
+    OngoingTask,
+    parseDetectorState,
+    Station,
+    TaskInstanceState,
+    TaskInstance as TI,
+} from "types";
 
 import ClearIcon from "@mui/icons-material/Clear";
 import { Box, Button, Grid, IconButton, Typography, useMediaQuery, useTheme } from "@mui/material";
@@ -58,6 +65,25 @@ async function getNewLocation(
             }
             setLocation(result);
         });
+}
+
+async function useFinalState(locationId: number) {
+    let instances = null;
+
+    try {
+        const response = await fetch(`${backend}/api/v1/locations/${locationId}/prev-instances`);
+        if (response.status != 400) {
+            const temp = await response.json();
+            instances = temp;
+            console.log("ITS ME dashboard", instances);
+        } else {
+            console.log("instance error");
+        }
+    } catch (error) {
+        console.log("Error while fetching final state:", error);
+    }
+
+    return instances;
 }
 
 export default function Dashboard() {
@@ -115,25 +141,35 @@ export default function Dashboard() {
     const detState = useRef(false);
     const isSuccessful = useRef(true);
     const detectionSuccessful = useRef(false);
+    const completedInstances =
 
     if (instance) {
+        console.log("EZ KELL2: " + task?.ongoingInstance?.id);
+        console.log("temp:", temp.ongoingTask?.ongoingInstance?.id);
         detState.current = true;
     }
 
     if (detState.current) {
+        console.log("EZ KELL: " + task?.ongoingInstance?.id);
+        console.log("temp2:", temp.ongoingTask?.ongoingInstance?.id);
         detectionSuccessful.current = instance?.currentOrderNumRemainingSteps === undefined;
     }
 
     if (!instance) {
+        console.log("temp3:", temp.ongoingTask?.ongoingInstance?.id);
         detState.current = false;
     }
-
+    const navigate = useNavigate();
     return (
         <Grid container spacing={2} height="100%">
             <Grid display="flex" flexDirection="column" gap={2} item xs={12} xl={9}>
-                {detectionSuccessful.current ? (
-                    <EndDetectionAlert location_id={location.id} />
-                ) : null}
+                <Button
+                    variant="outlined"
+                    sx={{ ml: 1, mr: 2 }}
+                    onClick={() => navigate(`../prev_instances/${location.id}`)}
+                >
+                    View
+                </Button>
                 <Stream
                     playing={playing}
                     detector={location.detector}
@@ -159,6 +195,13 @@ export default function Dashboard() {
                             parseDetectorState={parseDetectorState}
                         />
                     </Grid>
+                    {detectionSuccessful.current ? (
+                        <EndDetectionAlert
+                            task={task?.ongoingInstance?.state as TaskInstanceState}
+                            location_id={location.id}
+                            location={location}
+                        />
+                    ) : null}
                 </Grid>
                 {isBelowXl ? (
                     <Grid container spacing={2}>
@@ -193,26 +236,51 @@ export default function Dashboard() {
 
 type Props = {
     location_id: number;
+    task: TaskInstanceState;
+    location: Location;
 };
 
-function EndDetectionAlert({ location_id }: Props) {
-    const navigate = useNavigate();
+function EndDetectionAlert({ task, location_id, location }: Props) {
+    const [finalState, setFinalState] = useState<any[]>([]);
+    useEffect(() => {
+        const fetchFinalState = async () => {
+            const instances = await useFinalState(location_id);
+            setFinalState(instances);
+        };
+
+        fetchFinalState();
+    }, [location_id]);
+
+    const CW = () => {
+        console.log("HELLLOOO" + task);
+        console.log("location:", location.ongoingTask?.id);
+        console.log("location-ID:", location_id);
+        console.log("ASDLKASDLKASJD", finalState);
+    };
+
     return (
         <Grid
             display="flex"
             flexDirection="row"
             justifyContent="center"
-            sx={{ width: "100%", borderRadius: 3, minHeight: 50, backgroundColor: "white" }}
+            sx={{
+                width: "100%",
+                borderRadius: 3,
+                minHeight: 50,
+                backgroundColor: "white",
+                background: "#039487",
+            }}
             alignItems="center"
         >
             <Typography sx={{ ml: 2, mr: 1 }}>
-                Detection Task finished ! The timstamps of the events are available on the instances
+                Detection Task finished! The timstamps of the events are available on the instances
                 panel !
             </Typography>
             <Button
                 variant="outlined"
                 sx={{ ml: 1, mr: 2 }}
-                onClick={() => navigate(`../prev_instances/${location_id}`)}
+                //onClick={() => navigate(`../prev_instances/${location_id}`)}
+                onClick={() => CW()}
             >
                 View
             </Button>
