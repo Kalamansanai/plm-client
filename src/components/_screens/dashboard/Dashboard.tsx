@@ -141,7 +141,6 @@ export default function Dashboard() {
     const detState = useRef(false);
     const isSuccessful = useRef(true);
     const detectionSuccessful = useRef(false);
-    const completedInstances =
 
     if (instance) {
         console.log("EZ KELL2: " + task?.ongoingInstance?.id);
