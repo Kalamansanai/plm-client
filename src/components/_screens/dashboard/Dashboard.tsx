@@ -1,20 +1,16 @@
-import { backend, config as apiConfig, DetailedError } from "api";
+import { DetailedError, config as apiConfig, backend } from "api";
 import { LocationsApi, ResponseError } from "api_client";
-import axios from "axios";
-import { plainToClass } from "class-transformer";
-import React, { MutableRefObject, useEffect, useRef, useState } from "react";
-import { Link, Params, useLoaderData, useNavigate, useRouteLoaderData } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { Params, useLoaderData, useNavigate, useRouteLoaderData } from "react-router-dom";
 import {
     Location,
-    OngoingTask,
-    parseDetectorState,
     Station,
-    TaskInstanceState,
     TaskInstance as TI,
+    TaskInstanceState,
+    parseDetectorState,
 } from "types";
 
-import ClearIcon from "@mui/icons-material/Clear";
-import { Box, Button, Grid, IconButton, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Button, Grid, Typography, useMediaQuery, useTheme } from "@mui/material";
 
 import DetectionControls from "./DetectionControls";
 import NextStepGuide from "./NextStepGuide";
@@ -69,15 +65,15 @@ async function getNewLocation(
 
 async function useFinalState(locationId: number) {
     let instances = null;
+    let maxId;
 
     try {
         const response = await fetch(`${backend}/api/v1/locations/${locationId}/prev-instances`);
         if (response.status != 400) {
             const temp = await response.json();
             instances = temp;
-            console.log("ITS ME dashboard", instances);
         } else {
-            console.log("instance error");
+            console.log("Instance error");
         }
     } catch (error) {
         console.log("Error while fetching final state:", error);
@@ -116,7 +112,6 @@ export default function Dashboard() {
             eventSource.then((res) => res.close());
         };
     }, [location.id]);
-
     const [streamFps, setStreamFps] = useState(0);
 
     if (!station.locations.find((l) => l.id === location.id)) {
@@ -143,21 +138,17 @@ export default function Dashboard() {
     const detectionSuccessful = useRef(false);
 
     if (instance) {
-        console.log("EZ KELL2: " + task?.ongoingInstance?.id);
-        console.log("temp:", temp.ongoingTask?.ongoingInstance?.id);
         detState.current = true;
     }
 
     if (detState.current) {
-        console.log("EZ KELL: " + task?.ongoingInstance?.id);
-        console.log("temp2:", temp.ongoingTask?.ongoingInstance?.id);
         detectionSuccessful.current = instance?.currentOrderNumRemainingSteps === undefined;
     }
 
     if (!instance) {
-        console.log("temp3:", temp.ongoingTask?.ongoingInstance?.id);
         detState.current = false;
     }
+
     const navigate = useNavigate();
     return (
         <Grid container spacing={2} height="100%">
@@ -169,6 +160,13 @@ export default function Dashboard() {
                 >
                     View
                 </Button>
+                {detectionSuccessful.current ? (
+                    <EndDetectionAlert
+                        task={task?.ongoingInstance?.state as TaskInstanceState}
+                        location_id={location.id}
+                        location={location}
+                    />
+                ) : null}
                 <Stream
                     playing={playing}
                     detector={location.detector}
@@ -194,13 +192,6 @@ export default function Dashboard() {
                             parseDetectorState={parseDetectorState}
                         />
                     </Grid>
-                    {detectionSuccessful.current ? (
-                        <EndDetectionAlert
-                            task={task?.ongoingInstance?.state as TaskInstanceState}
-                            location_id={location.id}
-                            location={location}
-                        />
-                    ) : null}
                 </Grid>
                 {isBelowXl ? (
                     <Grid container spacing={2}>
@@ -240,22 +231,48 @@ type Props = {
 };
 
 function EndDetectionAlert({ task, location_id, location }: Props) {
-    const [finalState, setFinalState] = useState<any[]>([]);
+    const navigate = useNavigate();
+    const [instances, setInstances] = useState<{ instances: TI[] } | null>(null);
+    let TiFinalState: string | null;
+    const [backgroundColor, setBackgroundColor] = useState<string>("#FFFFFF");
+
     useEffect(() => {
-        const fetchFinalState = async () => {
-            const instances = await useFinalState(location_id);
-            setFinalState(instances);
+        const fetchInstances = async () => {
+            const fetchedInstances = await useFinalState(location_id);
+            setInstances(fetchedInstances);
         };
 
-        fetchFinalState();
+        fetchInstances();
     }, [location_id]);
 
-    const CW = () => {
-        console.log("HELLLOOO" + task);
-        console.log("location:", location.ongoingTask?.id);
-        console.log("location-ID:", location_id);
-        console.log("ASDLKASDLKASJD", finalState);
-    };
+    useEffect(() => {
+        let maxId = -1;
+        let TiFinalState = null;
+
+        if (instances?.instances) {
+            maxId = instances.instances.reduce((max, instance) => {
+                return instance.id > max ? instance.id : max;
+            }, -1);
+
+            instances.instances.forEach((instance: TI) => {
+                if (instance.id === maxId) {
+                    TiFinalState = instance.finalState;
+                }
+            });
+        }
+
+        if (TiFinalState === "Completed") {
+            setBackgroundColor("#039487");
+        } else if (TiFinalState === "Abandoned") {
+            setBackgroundColor("#E34234");
+        } else if (TiFinalState === "InProgress") {
+            setBackgroundColor("#87CEEB");
+        } else if (TiFinalState === "Paused") {
+            setBackgroundColor("#FFDB58");
+        } else {
+            setBackgroundColor("#FFFFFF");
+        }
+    }, [instances]);
 
     return (
         <Grid
@@ -267,7 +284,7 @@ function EndDetectionAlert({ task, location_id, location }: Props) {
                 borderRadius: 3,
                 minHeight: 50,
                 backgroundColor: "white",
-                background: "#039487",
+                background: backgroundColor,
             }}
             alignItems="center"
         >
@@ -278,8 +295,7 @@ function EndDetectionAlert({ task, location_id, location }: Props) {
             <Button
                 variant="outlined"
                 sx={{ ml: 1, mr: 2 }}
-                //onClick={() => navigate(`../prev_instances/${location_id}`)}
-                onClick={() => CW()}
+                onClick={() => navigate(`../prev_instances/${location_id}`)}
             >
                 View
             </Button>
