@@ -40,6 +40,7 @@ import {
     TextField,
     Tooltip,
     Typography,
+    Zoom,
     useMediaQuery,
     useTheme,
 } from "@mui/material";
@@ -376,6 +377,7 @@ export default function Task() {
     const { jobs, task: originalTask, snapshot } = useLoaderData() as LoaderData;
     const isLg = useMediaQuery(theme.breakpoints.up("lg"));
     const navigate = useNavigate();
+    const [isOrderRight, setIsOrderRight] = useState(true);
 
     // const [snapshot, setSnapshot] = useState(_snapshot);
 
@@ -411,20 +413,49 @@ export default function Task() {
         dispatch({ type: "Initialize", task: originalTask });
     };
 
+    const [isStepsOrdered, setIsStepsOrdered] = useState(false);
+
+    useEffect(() => {
+        const checkStepsOrder = () => {
+            const ordered = state.task.steps.every((step, index) => {
+                if (index === state.task.steps.length - 1) {
+                    return true;
+                }
+                const nextStep = state.task.steps[index + 1];
+                const nextPlusOrderNum = (+step.orderNum + 1).toString();
+                const nextOrderNum = nextStep?.orderNum.toString();
+                return nextOrderNum === nextPlusOrderNum;
+            });
+            setIsStepsOrdered(ordered);
+        };
+
+        checkStepsOrder();
+    }, [state.task.steps]);
+
     const onSave = () => {
         const delta = getTaskDelta(originalTask, state.task);
+
+        if (isStepsOrdered) {
+            fetcher.submit(
+                { delta: JSON.stringify(delta) },
+                { method: "post", action: location.pathname }
+            );
+            const taskLocation: Location = state.task.location as Location;
+            navigate({
+                pathname: `/dashboard/${taskLocation.stationId}/location/${taskLocation.id}`,
+            });
+        } else {
+            console.log("Invalid step order. Cannot save changes.");
+        }
 
         // NOTE(rg): this is kinda ugly. We convert the object to JSON and then the action converts
         // it back to an object. We can't pass the object directly because we can only put strings
         // in the FormData.
-        fetcher.submit(
-            { delta: JSON.stringify(delta) },
-            { method: "post", action: location.pathname }
-        );
-
-        const taskLocation: Location = state.task.location as Location;
-        navigate({ pathname: `/dashboard/${taskLocation.stationId}/location/${taskLocation.id}` });
     };
+
+    useEffect(() => {
+        setIsOrderRight(true);
+    }, [state.task]);
 
     const selectedObject = state.task.objects.find((o) => state.selection?.uuid === o.uuid);
 
@@ -658,9 +689,26 @@ export default function Task() {
                         <Button variant="contained" color="info" onClick={onRevert}>
                             Revert
                         </Button>
-                        <Button variant="contained" onClick={onSave}>
-                            Save changes
-                        </Button>
+                        <Tooltip
+                            TransitionComponent={Zoom}
+                            arrow
+                            placement="top-start"
+                            title={
+                                !isStepsOrdered
+                                    ? "The orders for steps need to be in sequential order. (2, 3, 4)"
+                                    : "Save"
+                            }
+                        >
+                            <span>
+                                <Button
+                                    variant="contained"
+                                    onClick={onSave}
+                                    disabled={!isStepsOrdered}
+                                >
+                                    Save changes
+                                </Button>
+                            </span>
+                        </Tooltip>
                     </Box>
                 </Box>
             </Paper>
