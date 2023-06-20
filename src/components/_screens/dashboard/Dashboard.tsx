@@ -153,13 +153,6 @@ export default function Dashboard() {
     return (
         <Grid container spacing={2} height="100%">
             <Grid display="flex" flexDirection="column" gap={2} item xs={12} xl={9}>
-                <Button
-                    variant="outlined"
-                    sx={{ ml: 1, mr: 2 }}
-                    onClick={() => navigate(`../prev_instances/${location.id}`)}
-                >
-                    View
-                </Button>
                 {detectionSuccessful.current ? (
                     <EndDetectionAlert
                         task={task?.ongoingInstance?.state as TaskInstanceState}
