@@ -292,14 +292,9 @@ export default function DetectionControls({
                     p: 2,
                 }}
             >
-                <Box
-                    display="flex"
-                    alignItems="flex-start"
-                    justifyContent="space-between"
-                    sx={{ width: "100%", mb: 2 }}
-                >
-                    <Title>Detection</Title>
-                    <Box display="flex" gap={2}>
+                <Title>Detection</Title>
+                <Box sx={{ width: "100%", mb: 2 }}>
+                    <Box display="flex" gap={2} flexDirection="row-reverse">
                         {!instance ? (
                             <Tooltip title={tooltip}>
                                 <Box>

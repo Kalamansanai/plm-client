@@ -1,7 +1,7 @@
 import Title from "components/Title";
 import { OngoingTaskInstance, GetStepActionString } from "types";
 
-import { Box, Paper, Typography } from "@mui/material";
+import { Box, Paper, Typography, useMediaQuery, useTheme } from "@mui/material";
 
 type Props = {
     instance?: OngoingTaskInstance;
@@ -10,6 +10,9 @@ type Props = {
 export default function NextStepGuide({ instance }: Props) {
     const disabled = !instance;
 
+    const theme = useTheme();
+    const isBelowXl = useMediaQuery(theme.breakpoints.down("md"));
+    console.log(isBelowXl);
     return (
         <Paper
             sx={{
@@ -35,7 +38,10 @@ export default function NextStepGuide({ instance }: Props) {
                 }}
             >
                 {disabled ? (
-                    <Typography fontSize="1.8em" sx={{ fontFamily: "monospace" }}>
+                    <Typography
+                        fontSize={isBelowXl ? "1em" : "1.8em"}
+                        sx={{ fontFamily: "monospace" }}
+                    >
                         No task is running
                     </Typography>
                 ) : (
@@ -54,7 +60,7 @@ export default function NextStepGuide({ instance }: Props) {
                         return (
                             <Typography
                                 key={i}
-                                fontSize="1.8em"
+                                fontSize={isBelowXl ? "1em" : "1.8em"}
                                 sx={{ fontFamily: "monospace", color: color }}
                             >
                                 {actionString}{" "}
