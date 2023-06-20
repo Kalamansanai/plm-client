@@ -25,6 +25,7 @@ export default function NavBar() {
     const [openPopup, setOpenPopup] = useState(false);
     const navigate = useNavigate();
 
+    //TODO: refactor this shit
     const onProfile = () => {
         navigate({ pathname: "/signin" });
     };
