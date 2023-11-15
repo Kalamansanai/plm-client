@@ -25,32 +25,6 @@ export default function NavBar() {
     const [openPopup, setOpenPopup] = useState(false);
     const navigate = useNavigate();
 
-    const onProfile = () => {
-        navigate({ pathname: "/signin" });
-    };
-
-    const onLogo = () => {
-        navigate({ pathname: "/hierarchy" });
-    };
-
-    const onOrganization = () => {
-        navigate({ pathname: "/hierarchy" });
-    };
-
-    const onData = () => {};
-
-    const onFiles = () => {
-        navigate({ pathname: "/filemanager" });
-    };
-
-    const onAbout = () => {
-        navigate({ pathname: "/about" });
-    };
-
-    const onClock = () => {
-        navigate({ pathname: "/caa" });
-    };
-
     return (
         <>
             <AppBar
@@ -59,13 +33,17 @@ export default function NavBar() {
             >
                 <Toolbar>
                     <Button sx={{ color: "white", fontSize: "1.2em" }}>
-                        <Typography component="div" variant="h5" onClick={onLogo}>
+                        <Typography
+                            component="div"
+                            variant="h5"
+                            onClick={() => navigate("hierarchy")}
+                        >
                             Production Line Monitoring
                         </Typography>
                     </Button>
                     <Box display="flex" gap={2} sx={{ ml: "auto" }}>
                         <Button
-                            onClick={onProfile}
+                            onClick={() => navigate("/signin")}
                             size="large"
                             sx={{ color: "white", fontSize: "1.2em" }}
                         >
@@ -86,21 +64,19 @@ export default function NavBar() {
                             sx={{ bgcolor: "white", mx: 1 }}
                         />
                         <Tooltip title="Organization">
-                            <IconButton onClick={onOrganization} sx={{ color: "white" }}>
+                            <IconButton
+                                onClick={() => navigate("/hierarchy")}
+                                sx={{ color: "white" }}
+                            >
                                 <FactoryIcon fontSize="large" />
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Dashboard">
-                            <IconButton onClick={onData} sx={{ color: "white" }}>
+                            <IconButton sx={{ color: "white" }}>
                                 <DashboardIcon fontSize="large" />
                             </IconButton>
                         </Tooltip>
-                        <Tooltip title="Data">
-                            <IconButton sx={{ color: "white" }}>
-                                <ListAltIcon fontSize="large" />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Files" onClick={onFiles}>
+                        <Tooltip title="Files" onClick={() => navigate("/filemanager")}>
                             <IconButton sx={{ color: "white" }}>
                                 <FolderIcon fontSize="large" />
                             </IconButton>
@@ -108,11 +84,6 @@ export default function NavBar() {
                         <Tooltip onClick={() => setOpenPopup(true)} title="About">
                             <IconButton sx={{ color: "white" }}>
                                 <InfoIcon fontSize="large" />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip onClick={onClock} title="CAA Emulator">
-                            <IconButton sx={{ color: "white" }}>
-                                <AccessTimeFilledIcon fontSize="large" />
                             </IconButton>
                         </Tooltip>
                     </Box>

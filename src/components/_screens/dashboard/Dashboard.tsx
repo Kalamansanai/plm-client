@@ -1,13 +1,16 @@
-import { backend, config as apiConfig, DetailedError } from "api";
+import { DetailedError, config as apiConfig, backend } from "api";
 import { LocationsApi, ResponseError } from "api_client";
-import axios from "axios";
-import { plainToClass } from "class-transformer";
-import React, { MutableRefObject, useEffect, useRef, useState } from "react";
-import { Link, Params, useLoaderData, useNavigate, useRouteLoaderData } from "react-router-dom";
-import { Location, OngoingTask, parseDetectorState, Station } from "types";
+import React, { useEffect, useRef, useState } from "react";
+import { Params, useLoaderData, useNavigate, useRouteLoaderData } from "react-router-dom";
+import {
+    Location,
+    Station,
+    TaskInstance as TI,
+    TaskInstanceState,
+    parseDetectorState,
+} from "types";
 
-import ClearIcon from "@mui/icons-material/Clear";
-import { Box, Button, Grid, IconButton, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Button, Grid, Typography, useMediaQuery, useTheme } from "@mui/material";
 
 import DetectionControls from "./DetectionControls";
 import NextStepGuide from "./NextStepGuide";
@@ -60,6 +63,25 @@ async function getNewLocation(
         });
 }
 
+async function useFinalState(locationId: number) {
+    let instances = null;
+    let maxId;
+
+    try {
+        const response = await fetch(`${backend}/api/v1/locations/${locationId}/prev-instances`);
+        if (response.status != 400) {
+            const temp = await response.json();
+            instances = temp;
+        } else {
+            console.log("Instance error");
+        }
+    } catch (error) {
+        console.log("Error while fetching final state:", error);
+    }
+
+    return instances;
+}
+
 export default function Dashboard() {
     const [selectedTaskId, setSelectedTaskId] = useState(-1);
 
@@ -90,7 +112,6 @@ export default function Dashboard() {
             eventSource.then((res) => res.close());
         };
     }, [location.id]);
-
     const [streamFps, setStreamFps] = useState(0);
 
     if (!station.locations.find((l) => l.id === location.id)) {
@@ -128,11 +149,16 @@ export default function Dashboard() {
         detState.current = false;
     }
 
+    const navigate = useNavigate();
     return (
         <Grid container spacing={2} height="100%">
             <Grid display="flex" flexDirection="column" gap={2} item xs={12} xl={9}>
                 {detectionSuccessful.current ? (
-                    <EndDetectionAlert location_id={location.id} />
+                    <EndDetectionAlert
+                        task={task?.ongoingInstance?.state as TaskInstanceState}
+                        location_id={location.id}
+                        location={location}
+                    />
                 ) : null}
                 <Stream
                     playing={playing}
@@ -193,20 +219,70 @@ export default function Dashboard() {
 
 type Props = {
     location_id: number;
+    task: TaskInstanceState;
+    location: Location;
 };
 
-function EndDetectionAlert({ location_id }: Props) {
+function EndDetectionAlert({ task, location_id, location }: Props) {
     const navigate = useNavigate();
+    const [instances, setInstances] = useState<{ instances: TI[] } | null>(null);
+    let TiFinalState: string | null;
+    const [backgroundColor, setBackgroundColor] = useState<string>("#FFFFFF");
+
+    useEffect(() => {
+        const fetchInstances = async () => {
+            const fetchedInstances = await useFinalState(location_id);
+            setInstances(fetchedInstances);
+        };
+
+        fetchInstances();
+    }, [location_id]);
+
+    useEffect(() => {
+        let maxId = -1;
+        let TiFinalState = null;
+
+        if (instances?.instances) {
+            maxId = instances.instances.reduce((max, instance) => {
+                return instance.id > max ? instance.id : max;
+            }, -1);
+
+            instances.instances.forEach((instance: TI) => {
+                if (instance.id === maxId) {
+                    TiFinalState = instance.finalState;
+                }
+            });
+        }
+
+        if (TiFinalState === "Completed") {
+            setBackgroundColor("#039487");
+        } else if (TiFinalState === "Abandoned") {
+            setBackgroundColor("#E34234");
+        } else if (TiFinalState === "InProgress") {
+            setBackgroundColor("#87CEEB");
+        } else if (TiFinalState === "Paused") {
+            setBackgroundColor("#FFDB58");
+        } else {
+            setBackgroundColor("#FFFFFF");
+        }
+    }, [instances]);
+
     return (
         <Grid
             display="flex"
             flexDirection="row"
             justifyContent="center"
-            sx={{ width: "100%", borderRadius: 3, minHeight: 50, backgroundColor: "white" }}
+            sx={{
+                width: "100%",
+                borderRadius: 3,
+                minHeight: 50,
+                backgroundColor: "white",
+                background: backgroundColor,
+            }}
             alignItems="center"
         >
             <Typography sx={{ ml: 2, mr: 1 }}>
-                Detection Task finished ! The timstamps of the events are available on the instances
+                Detection Task finished! The timstamps of the events are available on the instances
                 panel !
             </Typography>
             <Button

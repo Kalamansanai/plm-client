@@ -147,8 +147,8 @@ export default function UserManager() {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
 
-        const password = data.get("password");
-        const re_password = data.get("re-password");
+        const password = data.get("password") as string;
+        const re_password = data.get("re-password") as string;
         const username = data.get("username");
 
         if (password == null || re_password == null || newRole === "-") {

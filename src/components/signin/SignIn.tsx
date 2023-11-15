@@ -51,6 +51,8 @@ async function SignInReq({ name, pass, setUser, setInvalidPassword }: Params) {
         }),
     });
 
+    console.log(password);
+
     const content = await response.json();
 
     const userResponse = await fetch(`${backend}/api/v1/user`, {

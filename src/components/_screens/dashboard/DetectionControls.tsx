@@ -235,14 +235,27 @@ export default function DetectionControls({
     const tasksPopup = usePopupState({ variant: "popover", popupId: "tasks" });
     const noTasksPopup = usePopupState({ variant: "popover", popupId: "noTask" });
     const fetcher = useFetcher();
-
     const [time, setTime] = useState(0);
+    const [detectionPaused, setDetectionPaused] = useState(false);
+
     useEffect(() => {
         const interval = setInterval(() => {
-            setTime(time + 1);
+            if (!detectionPaused) {
+                setTime((prevTime) => prevTime + 1);
+            }
         }, 1000);
         return () => clearInterval(interval);
-    });
+    }, [detectionPaused]);
+
+    const handlePauseDetection = () => {
+        sendCommand("pause");
+        setDetectionPaused(true);
+    };
+
+    const handleResumeDetection = () => {
+        sendCommand("resume");
+        setDetectionPaused(false);
+    };
 
     const api = new DetectorsApi();
 
@@ -292,14 +305,9 @@ export default function DetectionControls({
                     p: 2,
                 }}
             >
-                <Box
-                    display="flex"
-                    alignItems="flex-start"
-                    justifyContent="space-between"
-                    sx={{ width: "100%", mb: 2 }}
-                >
-                    <Title>Detection</Title>
-                    <Box display="flex" gap={2}>
+                <Title>Detection</Title>
+                <Box sx={{ width: "100%", mb: 2 }}>
+                    <Box display="flex" gap={2} flexDirection="row-reverse">
                         {!instance ? (
                             <Tooltip title={tooltip}>
                                 <Box>
@@ -329,7 +337,7 @@ export default function DetectionControls({
                                     <Fab
                                         size="medium"
                                         color="success"
-                                        onClick={() => sendCommand("resume")}
+                                        onClick={handleResumeDetection}
                                     >
                                         <PlayArrowIcon />
                                     </Fab>
@@ -359,7 +367,7 @@ export default function DetectionControls({
                                         <Fab
                                             size="medium"
                                             color="warning"
-                                            onClick={() => sendCommand("pause")}
+                                            onClick={handlePauseDetection}
                                         >
                                             <PauseIcon />
                                         </Fab>

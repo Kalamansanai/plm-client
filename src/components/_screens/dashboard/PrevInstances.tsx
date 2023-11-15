@@ -175,7 +175,7 @@ type TCProps = {
 
 function InstanceList({ taskInstances, selected, setSelected }: TCProps) {
     return (
-        <Grid display="flex" flexDirection="column" sx={{ height: "100%" }}>
+        <Grid display="flex" flexDirection="column" sx={{ height: "90%", width: "100%" }}>
             <Grid display="flex" flexDirection="row" sx={{ width: "100%" }}>
                 <Typography
                     sx={{
@@ -235,13 +235,16 @@ function InstanceList({ taskInstances, selected, setSelected }: TCProps) {
                     display: "flex",
                     flexDirection: "column-reverse",
                     overflowY: "auto",
-                    height: "80%",
                     width: "100%",
                     mt: 2,
                 }}
             >
                 {taskInstances.map((instance: TaskInstance) => (
-                    <ListItem disablePadding key={instance.id} sx={{ width: "100%" }}>
+                    <ListItem
+                        disablePadding
+                        key={instance.id}
+                        sx={{ height: "100%", width: "100%" }}
+                    >
                         <ListItemButton
                             onClick={() => setSelected(instance.id)}
                             sx={{

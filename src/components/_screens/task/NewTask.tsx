@@ -24,23 +24,13 @@ export async function loader({ request }: { request: Request }) {
     const locationId = Number(locationIdStr);
     // TODO(rg): error if NaN
 
-    let snapshot = null;
-    try {
-        snapshot = await new LocationsApi(apiConfig).apiEndpointsLocationsGetSnapshot({
-            id: locationId,
-        });
-    } catch {
-        // Location doesn't exist, or doesn't have a snapshot
-        // noop
-    }
-
     try {
         const jobs = (await new JobsApi(apiConfig).apiEndpointsJobsList()) as Array<Job>;
         const location = (await new LocationsApi(apiConfig).apiEndpointsLocationsGetById({
             id: locationId,
         })) as Location;
 
-        return { jobs, location, snapshot };
+        return { jobs, location };
     } catch (err) {
         throw err;
     }
@@ -118,8 +108,7 @@ export async function newJobAction({ request }: { request: Request }) {
 }
 
 export default function NewTask() {
-    const { jobs, location, snapshot } = useLoaderData() as LoaderData;
-    const [currentSnapshot, setSnapshot] = useState(snapshot);
+    const { jobs, location } = useLoaderData() as LoaderData;
     const fetcher = useFetcher();
 
     const [task, setTask] = useState(null);
@@ -130,12 +119,6 @@ export default function NewTask() {
     const [snapshotUrl, setSnapshotUrl] = useState("https://via.placeholder.com/640x360");
     // let snapshotUrl = ;
     // const source = `${backend}/api/v1/detectors/${3}/stream`;
-
-    useEffect(() => {
-        if (currentSnapshot != null) {
-            setSnapshotUrl(URL.createObjectURL(currentSnapshot));
-        }
-    }, [currentSnapshot]);
 
     const jobsSelectArray = [
         <MenuItem key={""} value={""}>
